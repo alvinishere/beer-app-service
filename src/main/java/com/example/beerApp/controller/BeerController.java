@@ -1,19 +1,16 @@
 package com.example.beerApp.controller;
 
-import com.example.beerApp.dto.AddBeerDto;
-import com.example.beerApp.dto.BeerDto;
-import com.example.beerApp.dto.BeerResponse;
-import com.example.beerApp.dto.GetBeerDto;
-import com.example.beerApp.entity.Beer;
+import com.example.beerApp.dto.BaseResponse;
+import com.example.beerApp.dto.beer.AddBeerRequest;
+import com.example.beerApp.dto.beer.UpdateBeerRequest;
 import com.example.beerApp.service.BeerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @RestController
@@ -22,46 +19,40 @@ import java.util.List;
 public class BeerController {
     private final BeerService beerService;
 
-    @GetMapping(path = "/getAllBeers")
-    @PreAuthorize("hasRole('client_admin')")
-    public ResponseEntity<BeerResponse> getAllBeers() {
-        List<GetBeerDto> res = beerService.getAllBeers();
-        return ResponseEntity.ok(createSuccessResponse(res));
-    }
+//    @GetMapping(path = "/getAllBeers")
+////    @PreAuthorize("hasRole('client_admin')")
+//    public ResponseEntity<BaseResponse> getAllBeers() {
+//        return ResponseEntity.ok(createSuccessResponse(beerService.getAllBeers()));
+//    }
 
-    @GetMapping(path = "/getMyBeers")
-    public ResponseEntity<BeerResponse> getMyBeers() {
-        List<GetBeerDto> res = beerService.getMyBeers();
-        return ResponseEntity.ok(createSuccessResponse(res));
-    }
+    @GetMapping(path = "/getListOfBeers")
+    public ResponseEntity<BaseResponse>getListOfBeers(
+            @RequestParam(name = "username", required = false) String username){
+        return ResponseEntity.ok(createSuccessResponse(beerService.getListOfBeers(username)));
+    };
 
-    @GetMapping(path = "/getAllUserBeers/{username}")
-    public ResponseEntity<BeerResponse> getAllUserBeers(@PathVariable String username) {
-        List<GetBeerDto> res = beerService.getAllUserBeers(username);
-        return ResponseEntity.ok(createSuccessResponse(res));
+    @GetMapping(path = "/getOwnBeers")
+    public ResponseEntity<BaseResponse> getOwnBeers() {
+        return ResponseEntity.ok(createSuccessResponse(beerService.getOwnBeers()));
     }
-
 
     @PostMapping(path = "/add")
-    public ResponseEntity<BeerResponse> addBeer(@Valid @RequestBody AddBeerDto addBeerDto) {
-        Beer res = beerService.addBeer(addBeerDto);
-        return ResponseEntity.ok(createSuccessResponse(res));
+    public ResponseEntity<BaseResponse> addBeer(@Valid @RequestBody AddBeerRequest addBeerRequest) {
+        return ResponseEntity.ok(createSuccessResponse(beerService.addBeer(addBeerRequest)));
     }
 
     @PutMapping(path = "/update/{beerId}")
-    public ResponseEntity<BeerResponse> updateBeer(@Valid @RequestBody BeerDto updateBeerDto, @PathVariable String beerId) {
-        Beer res = beerService.updateBeer(updateBeerDto, beerId);
-        return ResponseEntity.ok(createSuccessResponse(res));
+    public ResponseEntity<BaseResponse> updateBeer(@Valid @RequestBody UpdateBeerRequest updateBeerRequest, @PathVariable String beerId) {
+        return ResponseEntity.ok(createSuccessResponse(beerService.updateBeer(updateBeerRequest, beerId)));
     }
 
     @DeleteMapping(path = "/{beerId}")
-    @PreAuthorize("hasRole('client_admin')")
-    public ResponseEntity<BeerResponse> deleteBeer(@PathVariable String beerId) {
+    public ResponseEntity<BaseResponse> deleteBeer(@PathVariable String beerId) {
         beerService.deleteBeer(beerId);
         return ResponseEntity.ok((createSuccessResponse("Beer: " + beerId + " has been deleted")));
     }
 
-    private BeerResponse createSuccessResponse(Object data) {
-        return BeerResponse.builder().status("Success").data(data).build();
+    private BaseResponse createSuccessResponse(Object data) {
+        return BaseResponse.builder().status("Success").data(data).build();
     }
 }

@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  app:
+    image: 'beerapp:latest'
+    build:
+      context: .
+    container_name: app
+    restart: always
+    depends_on:
+      - db
+      - keycloak
+    networks:
+      - backend-network
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    ports:
+      - "8081:8081"
+  db:
+    image: postgres
+    restart: always
+    container_name: db
+    networks:
+      - backend-network
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+#      - ./dataset:/docker-entrypoint-initdb.d:ro
+      - db_data:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.2
+    container_name: keycloak-auth
+    hostname: keycloak-auth
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-network
+#    Volumes is used to save our data in keycloak folder for importing existing data
+    volumes:
+#      - ./keycloak:/opt/keycloak/data/import
+      - keycloak_data:/opt/keycloak/data/import
+    env_file:
+      - .env
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_USERNAME}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_PASSWORD}
+#    Entry point is the command to start keycloak and import existing data
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm"]
+
+# use named volumes so that whenever container is up again, docker wont create new volumes but will simply copy old volumes to new
+volumes:
+  keycloak_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./keycloak
+      o: bind
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./dataset
+      o: bind
+networks:
+  backend-network: { }

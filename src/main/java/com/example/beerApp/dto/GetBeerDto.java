@@ -14,8 +14,8 @@ public class GetBeerDto {
     private String name;
     private BigDecimal price;
     private short score;
-    private String username;
-    private String breweryId;
-    private String breweryName;
-    private String breweryType;
+//    private String username;
+//    private String breweryId;
+//    private String breweryName;
+//    private String breweryType;
 }
